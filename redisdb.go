@@ -1,7 +1,7 @@
 package redisdb
 
 import (
-	"log"
+	"errors"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -15,17 +15,17 @@ type RedisDB struct {
 
 var redisDB *RedisDB
 
-func Initial(url, pass string) {
+func Initial(url, pass string) (*RedisDB, error) {
 	cli := NewRedisClient(url, pass)
 	if cli == nil {
-		log.Panic("Redis error: Cannot connect to redis")
-		return
+		return nil, errors.New("Redis error: Cannot connect to redis")
 	}
 	redisDB = &RedisDB{
 		Client:   cli,
 		Duration: time.Hour * 24,
 	}
 
+	return redisDB, nil
 }
 
 func (redis *RedisDB) SetDefaultExpired(dr time.Duration) {
