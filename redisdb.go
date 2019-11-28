@@ -16,9 +16,28 @@ type RedisDB struct {
 var redisDB *RedisDB
 
 func Initial(url, pass string) (*RedisDB, error) {
-	cli := NewRedisClient(url, pass)
+	cli := NewRedisClient(url, pass, 0)
 	if cli == nil {
-		return nil, errors.New("Redis error: Cannot connect to redis")
+		return nil, errors.New("Cannot Create Redis Client")
+	}
+	if err := cli.Ping().Err(); err != nil {
+		return nil, err
+	}
+	redisDB = &RedisDB{
+		Client:   cli,
+		Duration: time.Hour * 24,
+	}
+
+	return redisDB, nil
+}
+
+func InitWithOptions(options *redis.Options) (*RedisDB, error) {
+	cli := redis.NewClient(options)
+	if cli == nil {
+		return nil, errors.New("Cannot Create Redis Client")
+	}
+	if err := cli.Ping().Err(); err != nil {
+		return nil, err
 	}
 	redisDB = &RedisDB{
 		Client:   cli,
@@ -37,11 +56,12 @@ func GetRedisDB() *RedisDB {
 }
 
 // New will create a new Redis client
-func NewRedisClient(uri, pass string) *redis.Client {
+func NewRedisClient(uri, pass string, db int) *redis.Client {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     uri,
 		Password: pass,
+		DB:       db,
 	})
 
 	return client
